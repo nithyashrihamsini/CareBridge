@@ -220,6 +220,80 @@ export function CareProvider({ children }) {
   };
 
   /**
+   * Log Symptom Check-in
+   * Transparent Interface Flags:
+   * - 0–3: Stable
+   * - 4–6: Attention
+   * - 7–10 or high severity plus worse than usual: Requires professional review
+   * Labels every entry as Patient-Reported.
+   */
+  const logSymptom = ({ symptom, severity, duration, trend, note = '', requestHelp = false }) => {
+    const actionTime = getCurrentTimeString();
+    const actionDate = getTodayDateString();
+
+    const numSeverity = Number(severity);
+
+    let flag = 'Stable';
+    if (numSeverity >= 7 || (numSeverity >= 5 && trend === 'Worse than usual') || requestHelp) {
+      flag = 'Requires professional review';
+    } else if (numSeverity >= 4) {
+      flag = 'Attention';
+    } else {
+      flag = 'Stable';
+    }
+
+    const detailsParts = [
+      `Severity: ${numSeverity}/10`,
+      duration ? `Duration: ${duration}` : null,
+      trend ? `Trend: ${trend}` : null,
+      note?.trim() ? `Note: "${note.trim()}"` : null,
+    ].filter(Boolean);
+
+    const symptomEvent = {
+      id: `evt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      patientId: patient.id,
+      type: 'symptom_reported',
+      title: `${symptom} (${numSeverity}/10 · ${flag})`,
+      status: flag,
+      date: actionDate,
+      time: actionTime,
+      source: 'patient',
+      note: detailsParts.join(' · '),
+      severity: numSeverity,
+      symptom,
+    };
+
+    const newEventsToAdd = [symptomEvent];
+
+    if (requestHelp) {
+      const helpEvent = {
+        id: `evt_${Date.now() + 1}_${Math.random().toString(36).substring(2, 6)}_help`,
+        patientId: patient.id,
+        type: 'help_requested',
+        title: `Help Requested: ${symptom} (Severity ${numSeverity}/10)`,
+        status: 'Requires professional review',
+        date: actionDate,
+        time: actionTime,
+        source: 'patient',
+        note: note?.trim()
+          ? `Patient requested professional attention. Note: "${note.trim()}"`
+          : 'Patient requested professional review for this reported symptom.',
+      };
+      newEventsToAdd.unshift(helpEvent);
+    }
+
+    setEvents((prev) => [...newEventsToAdd, ...prev]);
+
+    if (requestHelp) {
+      showToast('✓ Symptom recorded & clinical review requested', 'attention');
+    } else {
+      showToast(`✓ Patient-reported symptom recorded (${flag})`);
+    }
+
+    return { symptomEvent, flag };
+  };
+
+  /**
    * Generic event creator
    */
   const addActivityEvent = (eventData) => {
@@ -235,6 +309,7 @@ export function CareProvider({ children }) {
     setEvents((prev) => [newEvent, ...prev]);
     return newEvent;
   };
+
 
   /**
    * Reset Demo State
