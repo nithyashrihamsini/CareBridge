@@ -50,9 +50,6 @@ export default function RoleSelectPage() {
               Care-continuity and decision-support prototype. Select a role below to explore the application foundation.
             </p>
           </div>
-          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-            Milestone 1 Active
-          </span>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
