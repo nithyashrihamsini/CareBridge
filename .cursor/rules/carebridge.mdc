@@ -1,0 +1,68 @@
+---
+description: Permanent rules for the CareBridge AI project
+alwaysApply: true
+---
+
+# CareBridge AI rules
+
+## Product
+
+CareBridge AI is a hackathon prototype for care continuity between patients and authorized doctors.
+
+## Technology
+
+Use:
+- React
+- Vite
+- JavaScript
+- Tailwind CSS
+- Recharts
+- Local synthetic data first
+
+Do not add Firebase, authentication, or external APIs until the local MVP works.
+
+## Safety
+
+Never:
+- Diagnose a patient.
+- Prescribe medication.
+- Change dosage.
+- Recommend stopping medication.
+- Claim a symptom confirms a disease.
+- Invent patient events.
+- Use real patient data.
+- Present an AI summary as a clinical decision.
+
+Always:
+- Label symptoms as “patient-reported”.
+- Label flags as “requires professional review”.
+- Preserve original patient notes.
+- Show the report date range.
+- Show exact underlying activities.
+- Include a professional-review disclaimer in reports.
+
+## Workflow
+
+- Read PROJECT_SPEC.md and UX_SPEC.md before implementation.
+- Do not change product scope without asking the user.
+- Implement one milestone at a time.
+- Do not rewrite unrelated working files.
+- Before editing, explain which files will change.
+- After editing, run the app and check for errors.
+- Use mock data until the user explicitly approves a backend.
+- Use reusable components.
+- Keep patient screens mobile-first.
+- Keep doctor screens desktop/tablet-friendly.
+- Do not replace working UI with a new design without approval.
+
+## Mode behavior
+
+In Plan mode:
+- Do not edit files.
+- Do not run commands.
+- Only inspect the project and propose a plan.
+
+In Agent mode:
+- Implement only the approved milestone.
+- Stop after the milestone.
+- Report changed files, tests performed, and remaining issues.
