@@ -30,6 +30,7 @@ export default function PatientSymptomsPage() {
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
   const [confirmation, setConfirmation] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -61,6 +62,7 @@ export default function PatientSymptomsPage() {
       return;
     }
 
+    setIsSubmitting(true);
     const result = logSymptom({
       symptom,
       severity: form.severity,
@@ -84,6 +86,7 @@ export default function PatientSymptomsPage() {
     });
     setForm(initialForm);
     setError('');
+    setIsSubmitting(false);
   };
 
   return (
@@ -95,7 +98,7 @@ export default function PatientSymptomsPage() {
       />
 
       {!confirmation ? (
-        <Card className="space-y-6 p-5">
+        <Card className="space-y-6 p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Symptom</p>
@@ -104,7 +107,7 @@ export default function PatientSymptomsPage() {
             <Badge tone="patient-reported">Patient-Reported</Badge>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" aria-label="Symptom choices">
             {SYMPTOM_OPTIONS.map((option) => {
               const selected = form.symptom === option;
               return (
@@ -112,6 +115,7 @@ export default function PatientSymptomsPage() {
                   key={option}
                   type="button"
                   onClick={() => updateField('symptom', option)}
+                  aria-pressed={selected}
                   className={`w-full rounded-card border px-4 py-3 text-left text-small font-medium transition-colors ${
                     selected
                       ? 'border-primary bg-primary/10 text-ink'
@@ -140,6 +144,7 @@ export default function PatientSymptomsPage() {
               max="10"
               step="1"
               value={form.severity}
+              aria-valuetext={`${form.severity} out of 10`}
               onChange={(event) => updateField('severity', Number(event.target.value))}
               className="w-full accent-primary"
             />
@@ -158,10 +163,13 @@ export default function PatientSymptomsPage() {
               id="duration"
               type="text"
               value={form.duration}
+              aria-invalid={Boolean(error && !form.duration.trim())}
+              aria-describedby="duration-help"
               onChange={(event) => updateField('duration', event.target.value)}
               placeholder="e.g., 2 days, 1 week, 3 hours"
               className="w-full rounded-card border border-borderTheme bg-card px-3 py-3 text-small text-ink placeholder:text-muted focus:border-primary focus:outline-none"
             />
+            <p id="duration-help" className="text-[11px] text-muted">Enter how long this symptom has been present.</p>
           </div>
 
           <div className="space-y-3">
@@ -174,6 +182,7 @@ export default function PatientSymptomsPage() {
                     key={option}
                     type="button"
                     onClick={() => updateField('trend', option)}
+                    aria-pressed={selected}
                     className={`rounded-card border px-3 py-2.5 text-small font-medium transition-colors ${
                       selected
                         ? 'border-primary bg-primary/10 text-ink'
@@ -202,22 +211,22 @@ export default function PatientSymptomsPage() {
           </div>
 
           {error && (
-            <div className="rounded-card border border-red-200 bg-red-50 px-3 py-2 text-small font-medium text-red-700">
+            <div role="alert" className="rounded-card border border-red-200 bg-red-50 px-3 py-2 text-small font-medium text-red-700">
               {error}
             </div>
           )}
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button type="button" onClick={() => handleSubmit(false)} className="flex-1">
-              Submit Symptom Check-In
+            <Button type="button" onClick={() => handleSubmit(false)} className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? 'Submitting...' : 'Submit Symptom Check-In'}
             </Button>
-            <Button type="button" variant="critical" onClick={() => handleSubmit(true)} className="flex-1">
-              Request Help
+            <Button type="button" variant="critical" onClick={() => handleSubmit(true)} className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? 'Sending help request...' : 'Request Help'}
             </Button>
           </div>
         </Card>
       ) : (
-        <Card className="space-y-4 p-5">
+        <Card className="space-y-4 p-5 sm:p-6" role="status" aria-live="polite">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-h3 font-bold text-ink">
               {confirmation.requestHelp ? 'Help request recorded' : 'Symptom recorded'}

@@ -106,3 +106,33 @@ body {
   outline-offset: 2px;
 }
 
+@media print {
+  body {
+    background: white;
+  }
+
+  .doctor-layout-nav,
+  .doctor-topbar,
+  .report-actions,
+  .doctor-page-actions,
+  button,
+  a[href],
+  nav,
+  header {
+    display: none !important;
+  }
+
+  .print-report {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .print-report .rounded-card,
+  .print-report .bg-canvas,
+  .print-report .bg-card {
+    box-shadow: none !important;
+    background: white !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+  }
+}
+
