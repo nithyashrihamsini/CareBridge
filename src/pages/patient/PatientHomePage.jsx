@@ -150,6 +150,8 @@ export default function PatientHomePage() {
               const isTaken = evt.status === 'taken';
               const isMissed = evt.status === 'missed';
               const isAttended = evt.status === 'attended' || evt.status === 'confirmed';
+              const isSymptomEvent = evt.type === 'symptom_reported';
+              const isHelpEvent = evt.type === 'help_requested';
 
               return (
                 <Card key={evt.id} className="p-3.5 bg-card border border-borderTheme">
@@ -170,6 +172,27 @@ export default function PatientHomePage() {
                       )}
                     </div>
                   </div>
+
+                  {(isSymptomEvent || isHelpEvent) && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Badge tone="patient-reported">Patient-Reported</Badge>
+                      {evt.interfaceFlag && (
+                        <Badge tone={evt.interfaceFlag === 'Requires Professional Review' ? 'review' : evt.interfaceFlag === 'Attention' ? 'default' : 'stable'}>
+                          {evt.interfaceFlag}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {(isSymptomEvent || isHelpEvent) && (
+                    <div className="mt-2 space-y-1 text-xs text-muted">
+                      {evt.symptom && <p><span className="font-semibold text-ink">Symptom:</span> {evt.symptom}</p>}
+                      {evt.severity != null && <p><span className="font-semibold text-ink">Severity:</span> {evt.severity}/10</p>}
+                      {evt.duration && <p><span className="font-semibold text-ink">Duration:</span> {evt.duration}</p>}
+                      {evt.comparison && <p><span className="font-semibold text-ink">Comparison:</span> {evt.comparison}</p>}
+                      {evt.requestHelp && <p><span className="font-semibold text-ink">Support request:</span> Help requested</p>}
+                    </div>
+                  )}
 
                   {evt.note && (
                     <div className="mt-2 text-xs text-muted bg-canvas p-2 rounded border border-borderTheme">
