@@ -131,7 +131,7 @@ export default function DoctorPatientPage() {
               {statusLabel}
             </Badge>
             <Button variant="tertiary" size="sm" onClick={() => navigate(`/doctor/patients/${patient.id}/report?range=${rangeDays}`)}>
-              Generate Report
+              Generate Progress Report
             </Button>
           </div>
         }

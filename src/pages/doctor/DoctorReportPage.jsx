@@ -20,6 +20,14 @@ function toDateValue(dateString) {
   return Number.isNaN(time.getTime()) ? new Date(0) : time;
 }
 
+function formatGeneratedDate() {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date());
+}
+
 export default function DoctorReportPage() {
   const { patientId } = useParams();
   const navigate = useNavigate();
@@ -46,12 +54,27 @@ export default function DoctorReportPage() {
   const completedDoses = filteredEvents.filter((event) => event.type === 'medication_taken').length;
   const missedDoses = filteredEvents.filter((event) => event.type === 'medication_missed').length;
   const adherencePct = completedDoses + missedDoses === 0 ? 0 : Math.round((completedDoses / (completedDoses + missedDoses)) * 100);
-  const appointmentHistory = appointments.filter((appointment) => appointment.patientId === patientId);
+  const rangeStart = useMemo(() => {
+    const start = new Date();
+    start.setDate(start.getDate() - rangeDays);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }, [rangeDays]);
+  const appointmentHistory = appointments.filter(
+    (appointment) => appointment.patientId === patientId && toDateValue(appointment.scheduledDate) >= rangeStart
+  );
   const symptomEvents = filteredEvents.filter((event) => event.type === 'symptom_reported');
   const escalatedEntries = filteredEvents.filter(
-    (event) => event.type === 'help_requested' || (event.type === 'symptom_reported' && event.severity >= 7)
+    (event) => event.type === 'help_requested' || event.interfaceFlag === 'Requires Professional Review' || (event.type === 'symptom_reported' && event.severity >= 7)
   );
   const patientNotes = filteredEvents.filter((event) => event.note && event.note.trim().length > 0);
+  const completedActivities = filteredEvents.filter((event) => ['medication_taken', 'appointment_updated', 'feeling_recorded', 'symptom_reported'].includes(event.type)).length;
+  const missedAppointments = appointmentHistory.filter((appointment) => appointment.status === 'missed').length;
+  const missedActivities = missedDoses + missedAppointments;
+  const highestSeverity = symptomEvents.reduce((highest, event) => Math.max(highest, Number(event.severity || 0)), 0);
+  const automatedSummary = filteredEvents.length === 0
+    ? 'No activity information is available for the selected reporting period.'
+    : `During the selected reporting period, the patient completed ${completedDoses} of ${completedDoses + missedDoses} scheduled medication activities and missed ${missedDoses}. The patient reported ${symptomEvents.length} symptom${symptomEvents.length === 1 ? '' : 's'}, with a highest reported severity of ${highestSeverity}/10. ${missedAppointments} appointment${missedAppointments === 1 ? '' : 's'} were missed. ${escalatedEntries.length} activit${escalatedEntries.length === 1 ? 'y was' : 'ies were'} marked as requiring professional review.`;
 
   const chartData = symptomEvents.map((event) => ({
     date: formatDateLabel(event.date),
@@ -120,6 +143,11 @@ export default function DoctorReportPage() {
             <p className="text-xs text-muted">{patient.id}</p>
           </div>
           <div className="rounded-card border border-borderTheme bg-canvas p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted">Generated</p>
+            <p className="mt-2 text-small font-semibold text-ink">{formatGeneratedDate()}</p>
+            <p className="text-xs text-muted">Synthetic demonstration report</p>
+          </div>
+          <div className="rounded-card border border-borderTheme bg-canvas p-4">
             <p className="text-xs uppercase tracking-[0.18em] text-muted">Adherence</p>
             <p className="mt-2 text-small font-semibold text-ink">{adherencePct}%</p>
           </div>
@@ -133,6 +161,28 @@ export default function DoctorReportPage() {
           </div>
         </div>
       </Card>
+      <div className="mt-4 rounded-card border border-primary/20 bg-primary/5 p-3 text-small text-muted">
+        This report uses synthetic prototype data and is intended for professional review. It is not a diagnosis, treatment plan, or medical prediction.
+      </div>
+    <section aria-labelledby="activity-overview-heading">
+      <h2 id="activity-overview-heading" className="sr-only">Care activity overview</h2>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        {[
+          ['Activity completion', filteredEvents.length ? `${Math.round((completedActivities / filteredEvents.length) * 100)}%` : '0%', 'Recorded events completed'],
+          ['Medication adherence', `${adherencePct}%`, 'Taken versus missed doses'],
+          ['Completed activities', completedActivities, 'Events recorded as completed'],
+          ['Missed activities', missedActivities, 'Missed medication or appointments'],
+          ['Symptom entries', symptomEvents.length, 'Patient-reported entries'],
+          ['Professional review', escalatedEntries.length, 'Items requiring professional review'],
+        ].map(([label, value, description]) => (
+          <Card key={label} className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">{label}</p>
+            <p className="mt-2 text-2xl font-bold text-ink">{value}</p>
+            <p className="mt-1 text-xs text-muted">{description}</p>
+          </Card>
+        ))}
+      </div>
+    </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
         <Card className="p-4">
@@ -152,19 +202,35 @@ export default function DoctorReportPage() {
           ) : (
             <EmptyState title="No symptom data" body="No patient-reported symptom entries are available for this range." />
           )}
+          {symptomEvents.length > 0 && (
+            <div className="mt-4 space-y-2 border-t border-borderTheme pt-4">
+              {symptomEvents.map((event) => (
+                <div key={event.id} className="rounded-card border border-borderTheme bg-canvas p-3 text-small">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-semibold text-ink">{event.symptom || event.title}</p>
+                    <Badge tone="patient-reported">Patient-Reported</Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted">{event.date} · {event.time} · Severity {event.severity ?? 'Unavailable'}/10</p>
+                  <p className="mt-1 text-xs text-muted">Duration: {event.duration || 'Unavailable'} · Comparison: {event.comparison || 'Unavailable'}</p>
+                  {event.note && <p className="mt-2 text-xs text-muted">Original patient note: {event.note}</p>}
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         <Card className="p-4">
-          <h2 className="text-h3 font-bold text-ink">Observed activity summary</h2>
+          <h2 className="text-h3 font-bold text-ink">Automated activity summary</h2>
+          <p className="mt-4 text-small leading-relaxed text-muted">{automatedSummary}</p>
           <ul className="mt-4 space-y-2 text-small text-muted leading-relaxed">
-            <li>• {completedDoses} completed medication doses</li>
-            <li>• {missedDoses} missed medication doses</li>
-            <li>• {symptomEvents.length} patient-reported symptom entries</li>
-            <li>• {escalatedEntries.length} escalated or high-severity entries</li>
-            <li>• {patientNotes.length} patient notes captured</li>
+            <li>{completedDoses} completed medication activities</li>
+            <li>{missedDoses} missed medication activities</li>
+            <li>{symptomEvents.length} patient-reported symptom entries</li>
+            <li>{escalatedEntries.length} activities requiring professional review</li>
+            <li>{patientNotes.length} original patient notes captured</li>
           </ul>
           <div className="mt-4 rounded-card border border-borderTheme bg-canvas p-3 text-xs leading-relaxed text-muted">
-            This report compiles patient-reported logs for review. It does not contain automated diagnoses or treatment plans.
+            The summary uses only existing structured activity data. It does not diagnose, prescribe, predict, or recommend treatment.
           </div>
         </Card>
       </div>
@@ -191,7 +257,7 @@ export default function DoctorReportPage() {
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card className="p-4">
-          <h2 className="text-h3 font-bold text-ink">Escalated symptom entries</h2>
+          <h2 className="text-h3 font-bold text-ink">Escalation history</h2>
           <div className="mt-4 space-y-3">
             {escalatedEntries.length > 0 ? (
               escalatedEntries.map((event) => (
@@ -201,6 +267,8 @@ export default function DoctorReportPage() {
                     <Badge tone="review">Requires professional review</Badge>
                   </div>
                   <p className="mt-1 text-xs text-muted">{event.date} · {event.time}</p>
+                  <p className="mt-1 text-xs text-muted">Trigger: {event.symptom || event.title} · Severity: {event.severity ?? 'Unavailable'}</p>
+                  <p className="mt-1 text-xs text-muted">Status: {event.status || 'Requires professional review'}</p>
                   <p className="mt-1 text-xs text-muted">{event.note}</p>
                 </div>
               ))
@@ -266,6 +334,10 @@ export default function DoctorReportPage() {
           )}
         </div>
       </Card>
+
+      <p className="border-t border-borderTheme pt-4 text-xs leading-relaxed text-muted">
+        This report contains patient-generated information and an automated activity summary. It is intended to support professional review and does not replace clinical assessment, diagnosis, treatment advice, or emergency care.
+      </p>
     </div>
   );
 }

@@ -134,5 +134,18 @@ body {
     background: white !important;
     border-color: rgba(0, 0, 0, 0.12) !important;
   }
+
+  .print-report > * {
+    break-inside: avoid;
+  }
+
+  .print-report .recharts-responsive-container {
+    min-height: 220px;
+  }
+
+  .print-report table,
+  .print-report .space-y-3 > div {
+    break-inside: avoid;
+  }
 }
 

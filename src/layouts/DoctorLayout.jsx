@@ -9,7 +9,7 @@ export default function DoctorLayout() {
     <div className="min-h-screen bg-canvas text-ink transition-colors duration-150 flex flex-col">
       <SafetyDisclaimerBanner />
 
-      <div className="flex min-h-0 flex-1 md:flex">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <DoctorSidebar />
 
         <div className="flex min-w-0 flex-1 flex-col">

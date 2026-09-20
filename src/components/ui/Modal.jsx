@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export default function Modal({ open, title, children, onClose }) {
+export default function Modal({ open, title, children, onClose, className = '' }) {
   useEffect(() => {
     if (!open) {
       return undefined;
@@ -37,7 +37,7 @@ export default function Modal({ open, title, children, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="relative z-10 w-full max-w-md rounded-card bg-card border border-borderTheme p-6 shadow-card transition-all"
+        className={`relative z-10 max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-card bg-card border border-borderTheme p-6 shadow-card transition-all ${className}`}
       >
         <div className="mb-4 flex items-center justify-between gap-3 border-b border-borderTheme pb-3">
           <h2 id="modal-title" className="text-h3 font-semibold text-ink">
